@@ -1,0 +1,37 @@
+name: x-tracker Automation Engine
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # Runs every 3 hours everyday
+  workflow_dispatch:      # Allows manual one-click trigger from GitHub UI
+
+jobs:
+  track-and-post:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code Base
+      uses: actions/checkout@v4
+
+    - name: Set Up Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-numeric-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install twikit requests
+
+    - name: Execute Target Tracking Scan
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: python tracker.py
+
+    - name: Commit High Watermark Sync
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add last_seen.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "chore: sync state marker history [skip ci]" && git push)
