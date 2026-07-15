@@ -1,0 +1,4 @@
+# Add blocklist text phrases here to discard posts automatically
+subscriber
+join us
+discord
